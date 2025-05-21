@@ -3,9 +3,9 @@ import { useLocation } from 'react-router-dom';
 import { ProfileMenuUI } from '@ui';
 
 export const ProfileMenu: FC = () => {
-  const { pathname } = useLocation();
+	const { pathname } = useLocation();
 
-  const handleLogout = () => {};
+	const handleLogout = () => {};
 
-  return <ProfileMenuUI handleLogout={handleLogout} pathname={pathname} />;
+	return <ProfileMenuUI handleLogout={handleLogout} pathname={pathname} />;
 };
