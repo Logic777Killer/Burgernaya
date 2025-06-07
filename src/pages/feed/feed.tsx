@@ -1,29 +1,32 @@
-import { useDispatch, useSelector } from '@store';
 import { Preloader } from '@ui';
 import { FeedUI } from '@ui-pages';
-import { TOrder } from '@utils-types';
 import { FC, useEffect } from 'react';
-import { fetchFeeds } from '../../services/slices/feeds';
+import { useDispatch, useSelector } from '../../services/store';
+import {
+  feedThunk,
+  selectError,
+  selectLoading,
+  selectOrders
+} from '../../slices/feed-slice';
 
 export const Feed: FC = () => {
-	const dispatch = useDispatch();
+  /** TODO: взять переменную из стора */
+  const orders = useSelector(selectOrders);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+  const dispatch = useDispatch();
 
-	/** TODO: взять переменную из стора */
-	const { isLoading, data } = useSelector((state) => state.feedsReducer);
-	const orders: TOrder[] = data.orders;
+  useEffect(() => {
+    dispatch(feedThunk());
+  }, [dispatch]);
 
-	const handleGetFeeds = () => {
-		dispatch(fetchFeeds());
-	};
+  const handleGetFeeds = () => {
+    dispatch(feedThunk());
+  };
 
-	useEffect(() => {
-		handleGetFeeds();
-	}, [dispatch]);
+  if (loading) return <Preloader />;
+  if (error) return <div>Ошибка: {error.message}</div>;
+  if (!orders.length) return <div>Нет доступных заказов</div>;
 
-
-	if (!orders.length) {
-		return <Preloader />;
-	}
-
-	return isLoading ? <Preloader /> : <FeedUI orders={orders} handleGetFeeds={handleGetFeeds} />;
+  return <FeedUI orders={orders} handleGetFeeds={handleGetFeeds} />;
 };

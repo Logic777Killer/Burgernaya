@@ -78,8 +78,7 @@ module.exports = {
       '@utils-types': path.resolve(__dirname, './src/utils/types'),
       '@api': path.resolve(__dirname, './src/utils/burger-api.ts'),
       '@slices': path.resolve(__dirname, './src/services/slices'),
-      '@selectors': path.resolve(__dirname, './src/services/selectors'),
-      "@store": path.resolve(__dirname, "./src/services/store"),
+      '@selectors': path.resolve(__dirname, './src/services/selectors')
     }
   },
   output: {
@@ -90,9 +89,6 @@ module.exports = {
     static: path.join(__dirname, './dist'),
     compress: true,
     historyApiFallback: true,
-    port: 4000,
-    open: true, // сайт будет открываться сам при запуске npm run dev
-    hot: true,
-    liveReload: true
+    port: 4000
   }
 };

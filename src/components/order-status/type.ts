@@ -1,3 +1,3 @@
 export type OrderStatusProps = {
-	status: string;
+  status: string;
 };

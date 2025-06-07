@@ -1,4 +1,3 @@
-/* eslint-disable */
 {
   "parser": "@typescript-eslint/parser",
   "plugins": ["react", "@typescript-eslint", "prettier"],
@@ -12,7 +11,7 @@
   },
   "rules": {
     "prettier/prettier": [
-      "off",
+      "warn",
       {
         "usePrettierrc": true
       }
