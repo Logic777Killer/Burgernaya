@@ -12,6 +12,11 @@ const SELECTORS = {
     fillingPlaceholderText: 'Выберите начинку',
     orderButtonText: 'Оформить заказ',
     orderDetails: 'Детали ингредиента',
+    addIngredient: 'Добавить',
+    bunsText: 'Булки',
+    fillingsText: 'Начинки',
+    saucesText: 'Соусы',
+    orderIdText: 'идентификатор заказа',
     escapeKey: '{esc}',
     address: 'http://localhost:4000/',
 };
@@ -25,14 +30,12 @@ const TEST_DATA = {
 };
 
 describe('Авторизация и профиль', () => {
-    beforeEach(() => {
+    it('После логина происходит редирект в профиль и отображаются данные пользователя', function () {
         cy.fixture(TEST_DATA.fixtures.user).as('userData');
         cy.intercept('GET', '/api/auth/user', {fixture: TEST_DATA.fixtures.user}).as('getUser');
-    });
-
-    it('После логина происходит редирект в профиль и отображаются данные пользователя', function () {
     	cy.loginByApi();
 	cy.visit('/');
+        cy.contains(SELECTORS.profileMenuText).should('be.visible');
     	cy.contains(SELECTORS.profileMenuText).click();
     	cy.wait('@getUser');
         cy.get('@userData').then((user) => {
@@ -48,11 +51,7 @@ describe('Сборка бургера в конструкторе и заказ'
         cy.fixture(TEST_DATA.fixtures.user).as('userData');
         cy.intercept('GET', ENDPOINTS.getIngredients, {fixture: TEST_DATA.fixtures.ingredients}).as('mockIngredients');
         cy.intercept('GET', ENDPOINTS.authUser, {fixture: TEST_DATA.fixtures.user}).as('mockUserData');
-
-    	cy.setCookie('accessToken', 'mockToken');
-    	cy.window().then(win => {
-      	   win.localStorage.setItem('refreshToken', 'mockToken');
-    	});
+        cy.intercept('POST', ENDPOINTS.postOrder, {fixture: TEST_DATA.fixtures.orderResponse, statusCode: 200}).as('mockCreateOrder');
     	cy.visit('/');
     });
 
@@ -63,6 +62,7 @@ describe('Сборка бургера в конструкторе и заказ'
     });
 
     it('Добавляем булку в конструктор', function () {
+        cy.contains(SELECTORS.addIngredient).should('be.visible');
         cy.get('@ingredientsData').then((data) => {
             const bun = data.data.find((item) => item.type === 'bun');
             cy.contains(bun.name).parent().find('button').click();
@@ -71,6 +71,7 @@ describe('Сборка бургера в конструкторе и заказ'
     });
 
     it('Добавляем начинку в конструктор', function () {
+        cy.contains(SELECTORS.addIngredient).should('be.visible');
         cy.get('@ingredientsData').then((data) => {
             const filling = data.data.find((item) => item.type === 'main');
             cy.contains('Начинки').scrollIntoView().click({ force: true });
@@ -80,11 +81,15 @@ describe('Сборка бургера в конструкторе и заказ'
     });
 
     it('Создаем заказ', function () {
-        cy.intercept('POST', ENDPOINTS.postOrder, {
-            fixture: TEST_DATA.fixtures.orderResponse,
-            statusCode: 200,
-        }).as('mockCreateOrder');
-
+    	cy.setCookie('accessToken', 'Token');
+    	cy.window().then(w => {
+      	   w.localStorage.setItem('refreshToken', 'Token');
+    	});
+        cy.contains(SELECTORS.constructorTitleText).should('be.visible');
+        cy.contains(SELECTORS.bunsText).should('be.visible');
+        cy.contains(SELECTORS.fillingsText).should('be.visible');
+        cy.contains(SELECTORS.saucesText).should('be.visible');
+        cy.contains(SELECTORS.addIngredient).should('be.visible');
         cy.get('@ingredientsData').then((data) => {
             const bun = data.data.find((item) => item.type === 'bun');
             const filling = data.data.find((item) => item.type === 'main');
@@ -95,16 +100,16 @@ describe('Сборка бургера в конструкторе и заказ'
 
             cy.contains(SELECTORS.orderButtonText).should('not.be.disabled').click();
             cy.wait('@mockCreateOrder', { timeout: 30000 }).its('response.statusCode').should('eq', 200);
+	    cy.contains(SELECTORS.orderIdText).should('be.visible');
 
             cy.fixture(TEST_DATA.fixtures.orderResponse).then((orderData) => {
                 cy.contains(orderData.order.number.toString(), { timeout: 10000 }).should('be.visible');
             });
-
         });
     });
 
     it('Проверяем сброс конструктора после закрытия модалки', function () {
-        cy.get('body').type(SELECTORS.escapeKey);
+        cy.get('body').click(10, 10);
         cy.contains(SELECTORS.bunPlaceholderText).should('exist');
         cy.contains(SELECTORS.fillingPlaceholderText).should('exist');
         cy.contains(SELECTORS.constructorTitleText).should('exist');
@@ -119,26 +124,20 @@ describe('Закрытие модалок', () => {
         cy.intercept('GET', ENDPOINTS.getIngredients, {fixture: TEST_DATA.fixtures.ingredients}).as('mockIngredients');
         cy.intercept('GET', ENDPOINTS.authUser, {fixture: TEST_DATA.fixtures.user}).as('mockUserData');
     	cy.visit('/');
-    });
-
-    it('Открытие и закрытие деталей ингредиента через ESC', function () {
         cy.get('@ingredientsData').then((data) => {
             const ingredient = data.data.find((item) => item.type === 'bun');
             cy.contains(ingredient.name).click();
-	    cy.contains(SELECTORS.orderDetails).should('be.visible');
-            cy.get('body').type(SELECTORS.escapeKey);
-            cy.url().should('eq', SELECTORS.address);
         });
     });
 
-    it('Открытие и закрытие деталей ингредиента через клик по оверлею', function () {
-        cy.get('@ingredientsData').then((data) => {
-            const ingredient = data.data.find((item) => item.type === 'bun');
-            cy.contains(ingredient.name).click();
-            cy.contains(SELECTORS.orderDetails).should('be.visible');
-            cy.get('body').click(10, 10);
-            cy.url().should('eq', SELECTORS.address);
-        });
+    it('Закрытие деталей ингредиента через ESC', function () {
+        cy.get('body').type(SELECTORS.escapeKey);
+        cy.url().should('eq', SELECTORS.address);
+    });
+
+    it('Закрытие деталей ингредиента через клик по оверлею', function () {
+        cy.get('body').click(10, 10);
+        cy.url().should('eq', SELECTORS.address);
     });
 });
 
